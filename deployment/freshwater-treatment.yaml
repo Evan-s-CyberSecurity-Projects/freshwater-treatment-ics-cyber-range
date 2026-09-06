@@ -1,0 +1,251 @@
+# Freshwater Treatment ICS Cyber Range
+# Declarative reference manifest
+#
+# IMPORTANT:
+# This file documents the intended topology/configuration.
+# The currently working 480-2-build.py remains the operational source of truth.
+
+project:
+  name: "Freshwater Treatment ICS Cyber Range"
+  scenario: "freshwater_treatment"
+  lab_name: "Module 2 - Freshwater Treatment - Baseline"
+
+operations_network:
+  name: "operations"
+  subnet: "10.10.20.0/24"
+  netmask: "255.255.255.0"
+  switch_template: "Ethernet-Switch-10P"
+
+  devices:
+    - name: "plc-intake"
+      role: "intake-plc"
+      operations_ip: "10.10.20.11"
+
+    - name: "plc-filtration"
+      role: "filtration-plc"
+      operations_ip: "10.10.20.12"
+
+    - name: "plc-dosing"
+      role: "dosing-plc"
+      operations_ip: "10.10.20.13"
+
+    - name: "plc-storage"
+      role: "storage-plc"
+      operations_ip: "10.10.20.14"
+
+    - name: "hmi-poller"
+      role: "hmi"
+      ip: "10.10.20.20"
+
+    - name: "historian"
+      role: "historian"
+      ip: "10.10.20.30"
+
+    - name: "scada-server"
+      role: "scada"
+      ip: "10.10.20.200"
+      image: "evankunkel/generic-scada-freshwater:latest"
+
+    - name: "KaliLinux-1"
+      role: "security-workstation"
+      ip: "10.10.20.250"
+      template: "Kali Linux"
+
+templates:
+  sensor:
+    name: "generic-sensor"
+    image: "wtaylor8/generic-sensor:latest"
+    adapters: 5
+
+  plc:
+    name: "generic-plc"
+    image: "wtaylor8/generic-plc:latest"
+    adapters: 5
+
+  hmi:
+    name: "generic-hmi"
+    image: "wtaylor8/generic-hmi:latest"
+    adapters: 5
+
+  scada:
+    name: "generic-scada-freshwater"
+    image: "evankunkel/generic-scada-freshwater:latest"
+    adapters: 11
+
+  field_switch:
+    name: "Ethernet-Switch-10P"
+
+  operations_switch:
+    name: "Ethernet-Switch-10P"
+
+process_stages:
+
+  - name: "intake"
+    label: "Raw Water Intake"
+    field_network: "192.168.10.0/24"
+
+    plc:
+      name: "plc-intake"
+      field_ip: "192.168.10.5"
+      operations_ip: "10.10.20.11"
+      role: "intake"
+
+    sensors:
+      - name: "sensor-intake-flow"
+        ip: "192.168.10.1"
+        tag: "FT-INTAKE"
+        units: "gpm"
+        data_type: "float32"
+
+      - name: "sensor-intake-level"
+        ip: "192.168.10.2"
+        tag: "LT-INTAKE"
+        units: "ft"
+        data_type: "float32"
+
+      - name: "sensor-intake-pressure"
+        ip: "192.168.10.3"
+        tag: "DP-INTAKE"
+        units: "psi"
+        data_type: "float32"
+
+      - name: "sensor-intake-turbidity"
+        ip: "192.168.10.4"
+        tag: "TU-INTAKE"
+        units: "ntu"
+        data_type: "float32"
+
+  - name: "filtration"
+    label: "Filtration"
+    field_network: "192.168.20.0/24"
+
+    plc:
+      name: "plc-filtration"
+      field_ip: "192.168.20.5"
+      operations_ip: "10.10.20.12"
+      role: "filtration"
+
+    sensors:
+      - name: "sensor-filtration-turbidity"
+        ip: "192.168.20.1"
+        tag: "TU-FILTRATION"
+        units: "ntu"
+        data_type: "float32"
+
+      - name: "sensor-filtration-pressure"
+        ip: "192.168.20.2"
+        tag: "DP-FILTRATION"
+        units: "psi"
+        data_type: "float32"
+
+      - name: "sensor-filtration-flow"
+        ip: "192.168.20.3"
+        tag: "FT-FILTRATION"
+        units: "gpm"
+        data_type: "float32"
+
+      - name: "sensor-filtration-level"
+        ip: "192.168.20.4"
+        tag: "LT-FILTRATION"
+        units: "ft"
+        data_type: "float32"
+
+  - name: "dosing"
+    label: "Chemical Dosing"
+    field_network: "192.168.30.0/24"
+
+    plc:
+      name: "plc-dosing"
+      field_ip: "192.168.30.5"
+      operations_ip: "10.10.20.13"
+      role: "dosing"
+
+    sensors:
+      - name: "sensor-dosing-chlorine"
+        ip: "192.168.30.1"
+        tag: "CL-DOSING"
+        units: "mg/L"
+        data_type: "float32"
+
+      - name: "sensor-dosing-ph"
+        ip: "192.168.30.2"
+        tag: "PH-DOSING"
+        units: "pH"
+        data_type: "float32"
+
+      - name: "sensor-dosing-flow"
+        ip: "192.168.30.3"
+        tag: "FT-DOSING"
+        units: "gpm"
+        data_type: "float32"
+
+      - name: "sensor-dose-flow"
+        ip: "192.168.30.4"
+        tag: "FT-DOSE"
+        units: "gpm"
+        data_type: "float32"
+
+  - name: "storage"
+    label: "Finished Water Storage"
+    field_network: "192.168.40.0/24"
+
+    plc:
+      name: "plc-storage"
+      field_ip: "192.168.40.5"
+      operations_ip: "10.10.20.14"
+      role: "storage"
+
+    sensors:
+      - name: "sensor-storage-level"
+        ip: "192.168.40.1"
+        tag: "LT-STORAGE"
+        units: "ft"
+        data_type: "float32"
+
+      - name: "sensor-storage-turbidity"
+        ip: "192.168.40.2"
+        tag: "TU-STORAGE"
+        units: "ntu"
+        data_type: "float32"
+
+      - name: "sensor-storage-chlorine"
+        ip: "192.168.40.3"
+        tag: "CL-STORAGE"
+        units: "mg/L"
+        data_type: "float32"
+
+      - name: "sensor-storage-temperature"
+        ip: "192.168.40.4"
+        tag: "TT-STORAGE"
+        units: "C"
+        data_type: "float32"
+
+communications:
+  industrial_protocol: "Modbus/TCP"
+  port: 502
+
+security:
+  authorized_testing_only: true
+  attacker_workstation: "KaliLinux-1"
+
+  monitored_assets:
+    - "scada-server"
+    - "hmi-poller"
+    - "historian"
+    - "plc-intake"
+    - "plc-filtration"
+    - "plc-dosing"
+    - "plc-storage"
+    - "KaliLinux-1"
+
+validation:
+  required:
+    - "Required GNS3 templates available"
+    - "Expected nodes created"
+    - "PLC field interfaces configured"
+    - "PLC operations interfaces configured"
+    - "Field networks connected"
+    - "Operations network connected"
+    - "SCADA reachable at 10.10.20.200"
+    - "Kali present at 10.10.20.250"
+    - "Kali can reach SCADA"
