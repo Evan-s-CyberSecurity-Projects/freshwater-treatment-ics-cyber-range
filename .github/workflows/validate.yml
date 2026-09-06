@@ -1,0 +1,73 @@
+name: Validate Repository
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate Configuration and Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install deployment dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r deployment/requirements.txt
+
+      - name: Compile deployment Python
+        run: |
+          python -m py_compile deployment/480-2-build.py
+
+      - name: Validate YAML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path("deployment/config/freshwater-treatment.yaml")
+          with path.open("r", encoding="utf-8") as f:
+              yaml.safe_load(f)
+
+          print(f"Validated: {path}")
+          PY
+
+      - name: Validate required project files
+        run: |
+          test -f README.md
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
+          test -f architecture/README.md
+          test -f architecture/addressing.md
+          test -f deployment/README.md
+          test -f deployment/480-2-build.py
+          test -f deployment/Dockerfile
+          test -f deployment/requirements.txt
+          test -f deployment/config/freshwater-treatment.yaml
+          test -f scada/README.md
+          test -f scada/Dockerfile
+          test -f scada/freshwater_treatment/diagrams.yaml
+          test -f scada/templates/diagrams/freshwater_overview.html
+          test -f sensors/README.md
+          test -f security/README.md
+          test -f documentation/README.md
+
+      - name: Check for obvious secret files
+        run: |
+          ! find . \
+            -type f \
+            \( -name ".env" -o -name "*.pem" -o -name "*.key" \) \
+            -not -path "./.git/*" \
+            | grep .
