@@ -1,0 +1,3 @@
+# Runtime dependencies for freshwater GNS3 deployment automation
+gns3fy==0.7.2
+requests==2.34.2
